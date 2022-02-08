@@ -126,6 +126,18 @@ func (k Kind) basicType() rawType {
 	return rawType(k << 1)
 }
 
+// Copied from reflect/type.go
+// https://go.dev/src/reflect/type.go?#L348
+
+// ChanDir represents a channel type's direction.
+type ChanDir int
+
+const (
+	RecvDir ChanDir             = 1 << iota // <-chan
+	SendDir                                 // chan<-
+	BothDir = RecvDir | SendDir             // chan
+)
+
 // Method represents a single method.
 type Method struct {
 	// Name is the method name.
@@ -251,7 +263,7 @@ type Type interface {
 
 	// ChanDir returns a channel type's direction.
 	// It panics if the type's Kind is not Chan.
-	//ChanDir() ChanDir
+	ChanDir() ChanDir
 
 	// IsVariadic reports whether a function type's final input parameter
 	// is a "..." parameter. If so, t.In(t.NumIn() - 1) returns the parameter's
@@ -265,7 +277,7 @@ type Type interface {
 	//	t.IsVariadic() == true
 	//
 	// IsVariadic panics if the type's Kind is not Func.
-	//IsVariadic() bool
+	IsVariadic() bool
 
 	// Elem returns a type's element type.
 	// It panics if the type's Kind is not Array, Chan, Map, Ptr, or Slice.
@@ -284,7 +296,7 @@ type Type interface {
 
 	// FieldByName returns the struct field with the given name
 	// and a boolean indicating if the field was found.
-	//FieldByName(name string) (StructField, bool)
+	FieldByName(name string) (StructField, bool)
 
 	// FieldByNameFunc returns the struct field with a name
 	// that satisfies the match function and a boolean indicating if
@@ -319,11 +331,11 @@ type Type interface {
 
 	// NumIn returns a function type's input parameter count.
 	// It panics if the type's Kind is not Func.
-	//NumIn() int
+	NumIn() int
 
 	// NumOut returns a function type's output parameter count.
 	// It panics if the type's Kind is not Func.
-	//NumOut() int
+	NumOut() int
 
 	// Out returns the type of a function type's i'th output parameter.
 	// It panics if the type's Kind is not Func.
@@ -692,8 +704,24 @@ func (t rawType) Comparable() bool {
 	}
 }
 
+func (t rawType) ChanDir() ChanDir {
+	panic("unimplemented: (reflect.Type).ChanDir()")
+}
+
 func (t rawType) ConvertibleTo(u Type) bool {
 	panic("unimplemented: (reflect.Type).ConvertibleTo()")
+}
+
+func (t rawType) IsVariadic() bool {
+	panic("unimplemented: (reflect.Type).IsVariadic()")
+}
+
+func (t rawType) NumIn() int {
+	panic("unimplemented: (reflect.Type).NumIn()")
+}
+
+func (t rawType) NumOut() int {
+	panic("unimplemented: (reflect.Type).NumOut()")
 }
 
 func (t rawType) NumMethod() int {
@@ -724,6 +752,10 @@ func (t rawType) PkgPath() string {
 	panic("unimplemented: (reflect.Type).PkgPath()")
 }
 
+func (t rawType) FieldByName(name string) (StructField, bool) {
+	panic("unimplemented: (reflect.Type).FieldByName()")
+}
+
 // A StructField describes a single field in a struct.
 type StructField struct {
 	// Name indicates the field name.
@@ -737,6 +769,7 @@ type StructField struct {
 	Tag       StructTag // field tag string
 	Anonymous bool
 	Offset    uintptr
+	Index     []int // index sequence for Type.FieldByIndex
 }
 
 // IsExported reports whether the field is exported.

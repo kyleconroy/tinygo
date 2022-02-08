@@ -339,6 +339,10 @@ func (v Value) Slice(i, j int) Value {
 	panic("unimplemented: (reflect.Value).Slice()")
 }
 
+func (v Value) Slice3(i, j, k int) Value {
+	panic("unimplemented: (reflect.Value).Slice3()")
+}
+
 //go:linkname maplen runtime.hashmapLenUnsafePointer
 func maplen(p unsafe.Pointer) int
 
@@ -872,6 +876,10 @@ func (v Value) Call(in []Value) []Value {
 
 func (v Value) MethodByName(name string) Value {
 	panic("unimplemented: (reflect.Value).MethodByName()")
+}
+
+func (v Value) Recv() (x Value, ok bool) {
+	panic("unimplemented: (reflect.Value).Recv()")
 }
 
 func NewAt(typ Type, p unsafe.Pointer) Value {
