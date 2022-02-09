@@ -308,6 +308,7 @@ test-corpus-wasi: wasi-libc
 smoketest:
 	$(TINYGO) version
 	# regression test for #2563
+	cd tests/text/template/smoke && $(TINYGO) test -c && rm smoke.test
 	cd tests/os/smoke && $(TINYGO) test -c -target=pybadge && rm smoke.test
 	# test all examples (except pwm)
 	$(TINYGO) build -size short -o test.hex -target=pca10040            examples/blinky1
