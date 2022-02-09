@@ -4,13 +4,13 @@
 package template_smoke_test
 
 import (
-	"log"
 	"os"
 	"strings"
+	"testing"
 	"text/template"
 )
 
-func ExampleTemplate() {
+func TestExampleTemplate(tt *testing.T) {
 	// Define a template.
 	const letter = `
 Dear {{.Name}},
@@ -44,7 +44,7 @@ Josie
 	for _, r := range recipients {
 		err := t.Execute(os.Stdout, r)
 		if err != nil {
-			log.Println("executing template:", err)
+			tt.Log("executing template:", err)
 		}
 	}
 
@@ -75,7 +75,7 @@ Josie
 
 // The following example is duplicated in html/template; keep them in sync.
 
-func ExampleTemplate_block() {
+func TestExampleTemplate_block(tt *testing.T) {
 	const (
 		master  = `Names:{{block "list" .}}{{"\n"}}{{range .}}{{println "-" .}}{{end}}{{end}}`
 		overlay = `{{define "list"}} {{join . ", "}}{{end}} `
@@ -86,17 +86,17 @@ func ExampleTemplate_block() {
 	)
 	masterTmpl, err := template.New("master").Funcs(funcs).Parse(master)
 	if err != nil {
-		log.Fatal(err)
+		tt.Fatal(err)
 	}
 	overlayTmpl, err := template.Must(masterTmpl.Clone()).Parse(overlay)
 	if err != nil {
-		log.Fatal(err)
+		tt.Fatal(err)
 	}
 	if err := masterTmpl.Execute(os.Stdout, guardians); err != nil {
-		log.Fatal(err)
+		tt.Fatal(err)
 	}
 	if err := overlayTmpl.Execute(os.Stdout, guardians); err != nil {
-		log.Fatal(err)
+		tt.Fatal(err)
 	}
 	// Output:
 	// Names:
