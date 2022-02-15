@@ -139,3 +139,8 @@ func Clearenv() {
 func Environ() []string {
 	return syscall.Environ()
 }
+
+
+func Symlink(oldname, newname string) error {
+	panic("")
+}

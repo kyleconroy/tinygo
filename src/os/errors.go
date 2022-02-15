@@ -73,3 +73,10 @@ func underlyingError(err error) error {
 	}
 	return err
 }
+
+var ErrDeadlineExceeded error = &DeadlineExceededError{}
+
+// DeadlineExceededError is returned for an expired deadline.
+type DeadlineExceededError struct{}
+
+func (e *DeadlineExceededError) Error() string   { panic("unimplemented Error.Error()") }

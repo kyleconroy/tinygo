@@ -99,3 +99,7 @@ func isWindowsNulName(name string) bool {
 	}
 	return true
 }
+
+func Symlink(oldname, newname string) error {
+	panic("unimplemented: os.Symlink()")
+}

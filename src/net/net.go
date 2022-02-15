@@ -9,7 +9,34 @@ package net
 import (
 	"io"
 	"time"
+	"context"
+	"internal/singleflight"
 )
+
+// Addr represents a network end point address.
+//
+// The two methods Network and String conventionally return strings
+// that can be passed as the arguments to Dial, but the exact form
+// and meaning of the strings is up to the implementation.
+
+
+type UnixAddr struct {
+	Name string
+	Net  string
+}
+func (a *UnixAddr) String() string {
+	panic("unimplemented: UnixAddr.String()")
+}
+func (a *UnixAddr) Network() string {
+	panic("unimplemented: UnixAddr.Network()")
+}
+
+type UnknownNetworkError string
+func (e UnknownNetworkError) Error() string   {
+	panic("unimplemented net.Error()")
+}
+func (e UnknownNetworkError) Timeout() bool   { panic("unimplemented Timeout()") }
+func (e UnknownNetworkError) Temporary() bool { panic("unimplemented Temporary()") }
 
 // Addr represents a network end point address.
 //
@@ -20,7 +47,6 @@ type Addr interface {
 	Network() string // name of the network (for example, "tcp", "udp")
 	String() string  // string form of address (for example, "192.0.2.1:25", "[2001:db8::1]:80")
 }
-
 // Conn is a generic stream-oriented network connection.
 //
 // Multiple goroutines may invoke methods on a Conn simultaneously.
@@ -261,3 +287,77 @@ func (v *Buffers) consume(n int64) {
 		*v = (*v)[1:]
 	}
 }
+type SRV struct {
+	Target   string
+	Port     uint16
+	Priority uint16
+	Weight   uint16
+}
+
+var DefaultResolver = &Resolver{}
+type Resolver struct {
+	// PreferGo controls whether Go's built-in DNS resolver is preferred
+	// on platforms where it's available. It is equivalent to setting
+	// GODEBUG=netdns=go, but scoped to just this resolver.
+	PreferGo bool
+
+	// StrictErrors controls the behavior of temporary errors
+	// (including timeout, socket errors, and SERVFAIL) when using
+	// Go's built-in resolver. For a query composed of multiple
+	// sub-queries (such as an A+AAAA address lookup, or walking the
+	// DNS search list), this option causes such errors to abort the
+	// whole query instead of returning a partial result. This is
+	// not enabled by default because it may affect compatibility
+	// with resolvers that process AAAA queries incorrectly.
+	StrictErrors bool
+
+	// Dial optionally specifies an alternate dialer for use by
+	// Go's built-in DNS resolver to make TCP and UDP connections
+	// to DNS services. The host in the address parameter will
+	// always be a literal IP address and not a host name, and the
+	// port in the address parameter will be a literal port number
+	// and not a service name.
+	// If the Conn returned is also a PacketConn, sent and received DNS
+	// messages must adhere to RFC 1035 section 4.2.1, "UDP usage".
+	// Otherwise, DNS messages transmitted over Conn must adhere
+	// to RFC 7766 section 5, "Transport Protocol Selection".
+	// If nil, the default dialer is used.
+	Dial func(ctx context.Context, network, address string) (Conn, error)
+
+	// lookupGroup merges LookupIPAddr calls together for lookups for the same
+	// host. The lookupGroup key is the LookupIPAddr.host argument.
+	// The return values are ([]IPAddr, error).
+	lookupGroup singleflight.Group
+
+	// TODO(bradfitz): optional interface impl override hook
+	// TODO(bradfitz): Timeout time.Duration?
+}
+
+
+type DNSError struct {
+	Err         string // description of the error
+	Name        string // name looked for
+	Server      string // server used
+	IsTimeout   bool   // if true, timed out; not all timeouts set this
+	IsTemporary bool   // if true, error is temporary; not all errors set this
+	IsNotFound  bool   // if true, host could not be found
+}
+
+func (e *DNSError) Error() string {
+	panic("unimplemented: DNSError.Error()")
+}
+
+
+func (r *Resolver) LookupHost(ctx context.Context, host string) (addrs []string, err error) {
+	panic("unimplemented: Resolver.LookupHost()")
+}
+
+
+func (r *Resolver) LookupSRV(ctx context.Context, service, proto, name string) (string, []*SRV, error) {
+	panic("unimplemented: Resolver.LookupSRV()")
+}
+
+func (r *Resolver) LookupTXT(ctx context.Context, name string) ([]string, error) {
+	panic("unimplemented: Resolver.lookupTXT")
+}
+

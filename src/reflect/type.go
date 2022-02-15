@@ -121,6 +121,23 @@ func (k Kind) String() string {
 	}
 }
 
+// Method represents a single method.
+type Method struct {
+	// Name is the method name.
+	Name string
+
+	// PkgPath is the package path that qualifies a lower case (unexported)
+	// method name. It is empty for upper case (exported) method names.
+	// The combination of PkgPath and Name uniquely identifies a method
+	// in a method set.
+	// See https://golang.org/ref/spec#Uniqueness_of_identifiers
+	PkgPath string
+
+	Type  Type  // method type
+	Func  Value // func with receiver as first argument
+	Index int   // index for Type.Method
+}
+
 // basicType returns a new Type for this kind if Kind is a basic type.
 func (k Kind) basicType() rawType {
 	return rawType(k << 1)
@@ -173,7 +190,7 @@ type Type interface {
 	//
 	// For an interface type, the returned Method's Type field gives the
 	// method signature, without a receiver, and the Func field is nil.
-	//MethodByName(string) (Method, bool)
+	MethodByName(string) (Method, bool)
 
 	// NumMethod returns the number of exported methods in the type's method set.
 	NumMethod() int
@@ -187,7 +204,7 @@ type Type interface {
 	// If the type was predeclared (string, error) or not defined (*T, struct{},
 	// []int, or A where A is an alias for a non-defined type), the package path
 	// will be the empty string.
-	//PkgPath() string
+	PkgPath() string
 
 	// Size returns the number of bytes needed to store
 	// a value of the given type; it is analogous to unsafe.Sizeof.
@@ -234,7 +251,7 @@ type Type interface {
 
 	// ChanDir returns a channel type's direction.
 	// It panics if the type's Kind is not Chan.
-	//ChanDir() ChanDir
+	ChanDir() ChanDir
 
 	// IsVariadic reports whether a function type's final input parameter
 	// is a "..." parameter. If so, t.In(t.NumIn() - 1) returns the parameter's
@@ -248,7 +265,7 @@ type Type interface {
 	//	t.IsVariadic() == true
 	//
 	// IsVariadic panics if the type's Kind is not Func.
-	//IsVariadic() bool
+	IsVariadic() bool
 
 	// Elem returns a type's element type.
 	// It panics if the type's Kind is not Array, Chan, Map, Ptr, or Slice.
@@ -263,11 +280,11 @@ type Type interface {
 	// to the index sequence. It is equivalent to calling Field
 	// successively for each index i.
 	// It panics if the type's Kind is not Struct.
-	//FieldByIndex(index []int) StructField
+	FieldByIndex(index []int) StructField
 
 	// FieldByName returns the struct field with the given name
 	// and a boolean indicating if the field was found.
-	//FieldByName(name string) (StructField, bool)
+	FieldByName(name string) (StructField, bool)
 
 	// FieldByNameFunc returns the struct field with a name
 	// that satisfies the match function and a boolean indicating if
@@ -286,7 +303,7 @@ type Type interface {
 	// In returns the type of a function type's i'th input parameter.
 	// It panics if the type's Kind is not Func.
 	// It panics if i is not in the range [0, NumIn()).
-	//In(i int) Type
+	In(i int) Type
 
 	// Key returns a map type's key type.
 	// It panics if the type's Kind is not Map.
@@ -302,20 +319,28 @@ type Type interface {
 
 	// NumIn returns a function type's input parameter count.
 	// It panics if the type's Kind is not Func.
-	//NumIn() int
+	NumIn() int
 
 	// NumOut returns a function type's output parameter count.
 	// It panics if the type's Kind is not Func.
-	//NumOut() int
+	NumOut() int
 
 	// Out returns the type of a function type's i'th output parameter.
 	// It panics if the type's Kind is not Func.
 	// It panics if i is not in the range [0, NumOut()).
-	//Out(i int) Type
+	Out(i int) Type
 }
 
 // The typecode as used in an interface{}.
 type rawType uintptr
+// ChanDir represents a channel type's direction.
+type ChanDir uint64
+
+const (
+	RecvDir ChanDir             = 1 << iota // <-chan
+	SendDir                              // chan<-
+	BothDir = RecvDir | SendDir             // chan
+)
 
 func TypeOf(i interface{}) Type {
 	return ValueOf(i).typecode
@@ -704,6 +729,7 @@ type StructField struct {
 	Tag       StructTag // field tag string
 	Anonymous bool
 	Offset    uintptr
+	Index     []int     // index sequence for Type.FieldByIndex
 }
 
 // IsExported reports whether the field is exported.
@@ -787,6 +813,37 @@ func (tag StructTag) Lookup(key string) (value string, ok bool) {
 	return "", false
 }
 
+func (t rawType) In(i int) Type {
+	panic("unimplemented: (reflect.Type).In()")
+}
+
+func (t rawType) NumIn() int {
+	panic("unimplemented: (reflect.Type).NumIn()")
+}
+
+func (t rawType) Out(i int) Type {
+	panic("unimplemented: (reflect.Type).Out()")
+}
+
+func (t rawType) NumOut() int {
+	panic("unimplemented: (reflect.Type).NumOut()")
+}
+
+func (t rawType) IsVariadic() bool {
+	panic("unimplemented: (reflect.Type).IsVariadic()")
+}
+func (t rawType) ChanDir() ChanDir {
+	panic("unimplemented: (reflect.Type).ChanDir()")
+}
+func (t rawType) MethodByName(name string) (Method, bool) {
+	panic("unimplemented: (reflect.Type).MethodByName()")
+}
+
+func (t rawType) PkgPath() string {
+	panic("unimplemented: (reflect.Type).PkgPath()")
+}
+
+
 // TypeError is the error that is used in a panic when invoking a method on a
 // type that is not applicable to that type.
 type TypeError struct {
@@ -799,4 +856,24 @@ func (e *TypeError) Error() string {
 
 func align(offset uintptr, alignment uintptr) uintptr {
 	return (offset + alignment - 1) &^ (alignment - 1)
+}
+
+func SliceOf(t Type) Type {
+	panic("unimplemented: reflect.SliceOf()")
+}
+
+func MapOf(key, elem Type) Type {
+	panic("unimplemented: reflect.SliceOf()")
+}
+
+func (t rawType) FieldByName(name string) (StructField, bool) {
+	panic("unimplemented: reflect.FieldByName()")
+}
+
+func (t rawType) FieldByIndex(index []int) StructField {
+	panic("unimplemented: reflect.FieldByIndex()")
+}
+
+func ArrayOf(length int, elem Type) Type {
+	panic("unimplemented: reflect.ArrayOf()")
 }
